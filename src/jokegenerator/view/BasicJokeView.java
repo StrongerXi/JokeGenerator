@@ -3,10 +3,13 @@ package jokegenerator.view;
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.swing.JButton;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
+import java.awt.FlowLayout;
+import javax.swing.BoxLayout;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -33,7 +36,9 @@ public class BasicJokeView extends JFrame implements JokeView {
     this.listeners = new ArrayList<>();
 
     this.textPanel = new JTextArea("nothing yet~");
+    this.textPanel.setEditable(false);
     this.textPanel.setLineWrap(true);
+    // this.textPanel.setPreferredSize(new Dimension(width * 2 / 3, height / 2));
     this.add(this.textPanel);
 
     this.jokeRequestBotton = new JButton();
@@ -45,16 +50,18 @@ public class BasicJokeView extends JFrame implements JokeView {
         }
       }
     });
+    this.add(this.jokeRequestBotton);
 
+    this.setLayout(new BoxLayout(this.getContentPane(), BoxLayout.Y_AXIS));
+    this.setPreferredSize(new Dimension(width, height));
     this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     this.pack();
-    this.setVisible(true);
   }
 
 
   @Override
   public void setOutputText(String text) {
-    textPanel.setText(text);
+    this.textPanel.setText(text);
   }
 
 
@@ -64,7 +71,13 @@ public class BasicJokeView extends JFrame implements JokeView {
   }
 
 
+  @Override
   public void addListener(JokeViewListener listener) {
     this.listeners.add(listener);
+  }
+
+  @Override
+  public void makeVisible() {
+    this.setVisible(true);
   }
 }

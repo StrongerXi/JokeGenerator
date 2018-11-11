@@ -5,4 +5,5 @@ build.xml
 pom.xml
 .syntastic_javac_config
 .classpath
+target
 

@@ -6,7 +6,8 @@ import json
 from random import randint
 
 endOfJoke = "<s>"
-
+beginOfJoke = "</s>"
+COUNT_THRESHOLD = 1
 
 class Node:
 
@@ -86,12 +87,45 @@ class Model:
         return self.word_to_node[word].randomSelect()
 
 
-def process_data_from_file(file_in, file_out):
+
+def tokenize_data_from_file(file_in, file_out):
     # The input file is stored in Json format in terms of
     # "body" -> String. the joke in 
     # "id" -> String. unique id for the joke
     # "score" -> Int. The score of this joke
     # "title" -> title of this joke
+
+    # tokenized into {"tokens" : [List [List Token]], "scores" : [List Nat]}
+    # they are guaranteed to be the same in size
+
+    loj = []
+    los = []
+
+    with open(file_in, 'r') as data:
+        import re
+        p = re.compile(r"^(([a-zA-Z]+('[a-zA-Z])?)|[0-9]+)[,.?!]?$")
+        for joke in json.load(data):
+            lower_split = joke["body"].lower().split()
+            # if no token is disqualified by regex
+            if len(list(filter(p.match, lower_split))) == len(lower_split):
+                loj.append(lower_split)
+                los.append(joke["score"])
+
+
+    with open(file_out, 'w') as out:
+        json.dump({"tokens" : loj, "scores" : los}, out)
+
+
+
+
+def process_data_from_file(file_in, file_out):
+
+    # given data json format:
+    # {"tokens" : [List [List Token]], "scores" : [List Nat]}
+    # count/frequency is increased based on the score
+
+    # NOTE beginOfJoke is added to the beginning of each joke twice
+    # because we are using a tri-gram model
 
     # process the data from given file into 
     # ([Map Word [List (Word Count)]], [Map Pair-Word [List (Word Count)]])
@@ -101,21 +135,24 @@ def process_data_from_file(file_in, file_out):
 
     # list of jokes, which is a list of words
     loj = []
+    # list of scores, parallel to loj
+    los = []
     # keep a sentence with words and punctuation with only , . ! ?
     # tokenizer = RegexpTokenizer(r'[\w,!?.]+')
 
     with open(file_in, 'r') as data:
-        import re
-        p = re.compile(r"^(([a-zA-Z]+('[a-zA-Z])?)|[0-9]+)[,.?!]?$")
+         token_and_scores = json.load(data)
+         loj = token_and_scores["tokens"]
+         los = token_and_scores["scores"]
+         if len(loj) != len(los):
+             raise RuntimeError("jokes and scores size not equal")
 
-        for joke in json.load(data):
-            sentence = list(filter(p.match, joke["body"].lower().split()))
-            if sentence:
-                loj.append(sentence)
 
-    def update_counter_map(counter_map, key_to_counter, word):
+
+    def update_counter_map(counter_map, key_to_counter, word, delta):
         # [Map X [Map Word Nat]] X Word -> _
         # add the given word to the counter associated with the given key.
+        # increase the counter by delta
 
         # Initialize counter if it does not exist
         if key_to_counter not in counter_map:
@@ -127,7 +164,7 @@ def process_data_from_file(file_in, file_out):
         if word not in counter:
             counter[word] = 0
 
-        counter[word] += 1
+        counter[word] += delta
 
 
 
@@ -137,21 +174,25 @@ def process_data_from_file(file_in, file_out):
     # map (word, word) to [Map Word Nat]
     # This is used by a bi-gram model
     pairToCounter = {}
-    for joke in loj:
-        joke_len = len(joke)
-        # joke is a [List-of Word]
-        for i in range(joke_len):
-            word = joke[i]
-            next_word = joke[i + 1] if i + 1 < joke_len else endOfJoke
-            update_counter_map(strToCounter, word, next_word)
-            if i + 1 < joke_len:
-                next_next_word = joke[i + 2] if i + 2 < joke_len else endOfJoke
-                update_counter_map(pairToCounter, (word, next_word), next_next_word)
+    from math import log
 
-        # associate last word with end of joke
-        last = joke[-1]
-        update_counter_map(strToCounter, last, endOfJoke)
+    for index in range(len(loj)):
+        last_word = beginOfJoke
+        last_last_word = beginOfJoke
 
+        padded_joke = [beginOfJoke, beginOfJoke]
+        padded_joke.extend(loj[index])
+        padded_joke.append(endOfJoke)
+        # increment count based on log of score
+        delta = log(los[index] + 1, 2)
+
+        for i in range(2, len(padded_joke)):
+            word = padded_joke[i]
+            update_counter_map(strToCounter, last_word, word, delta)
+            update_counter_map(pairToCounter, (last_last_word, last_word), word, delta)
+            # udpate cached last words
+            last_last_word = last_word
+            last_word = word
 
     # convert data to [Map Word Node]
     word_to_node = {}
@@ -161,10 +202,15 @@ def process_data_from_file(file_in, file_out):
         candidates = []
 
         for nextWord in counter.keys():
-            #if counter[nextWord] == maxCount:
-            candidates.append( (nextWord, counter[nextWord]) )
+            # must convert the counter value to an int. since
+            # it's sum of some log values
+            count = int(counter[nextWord])
+            if count > COUNT_THRESHOLD:
+                candidates.append( (nextWord, count) )
 
-        word_to_node[word] = candidates
+        if candidates:
+            word_to_node[word] = candidates
+
 
     # convert data to [Map (Word, Word) Node]
     # since json does not allow key to be tuple,
@@ -176,11 +222,15 @@ def process_data_from_file(file_in, file_out):
         candidates = []
 
         for nextWord in counter.keys():
-            #if counter[nextWord] == maxCount:
-            candidates.append( (nextWord, counter[nextWord]) )
+            # must convert the counter value to an int. since
+            # it's sum of some log values
+            count = int(counter[nextWord])
+            if count > COUNT_THRESHOLD:
+                candidates.append( (nextWord, count) )
 
-        pair_str = pair[0] + " " + pair[1]
-        pair_to_node[pair_str] = candidates
+        if candidates:
+            pair_str = pair[0] + " " + pair[1]
+            pair_to_node[pair_str] = candidates
    
     with open(file_out, 'w') as output:
         str_to_map = {"unigram" : word_to_node, "bigram" : pair_to_node}
@@ -248,7 +298,8 @@ def main():
             pass
 
         
-# process_data_from_file("wocka.json", "wocka-processed.json")
+tokenize_data_from_file("./data/jokes-data.json", "data/jokes-data-tokenized.json")
+process_data_from_file("./data/jokes-data-tokenized.json", "./data/jokes-data-processed.json")
 # main()
 # dump_data()
 

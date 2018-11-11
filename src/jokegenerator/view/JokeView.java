@@ -18,4 +18,9 @@ public interface JokeView {
    * Refresh the view.
    */
   void refresh();
+
+  /**
+   * Make this view visible.
+   */
+  void makeVisible();
 }
