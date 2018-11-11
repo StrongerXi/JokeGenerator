@@ -7,12 +7,12 @@ from random import randint
 
 endOfJoke = "<s>"
 beginOfJoke = "</s>"
-COUNT_THRESHOLD = 2
+COUNT_THRESHOLD = 1
 
 from math import log
 # used to adjust how score contribute to the count increment
 def score_to_count_delta(score):
-    return log(score + 1, 5)
+    return 1 + log(score + 1, 4)
 
 class Node:
 
@@ -242,6 +242,23 @@ def process_data_from_file(file_in, file_out):
         json.dump(str_to_map, output)
 
 
+def tokenize_csv_data_to_json(file_in, file_out):
+
+    # given data format:
+    # rows of "n, joke" where n is the index, joke is the actual joke
+    #
+    # tokenized into [List-of {"score" : 0, "body" : string sentence}]
+    
+    with open(file_in, 'r') as csv_data:
+        with open(file_out, 'w') as json_file:
+            import csv
+            result = []
+            for row in csv.reader(csv_data, delimiter = ',', quotechar = '"'):
+                result.append({"score" : 0, "body" : row[1]})
+            json.dump(result, json_file)
+                
+
+
 
 
 
@@ -302,9 +319,13 @@ def main():
         except ValueError:
             pass
 
-        
-tokenize_data_from_file("./data/jokes-data.json", "data/jokes-data-tokenized.json")
-process_data_from_file("./data/jokes-data-tokenized.json", "./data/jokes-data-processed.json")
+
+# tokenize_data_from_file("./data/jokes-data.json", "data/jokes-data-tokenized.json")
+# process_data_from_file("./data/jokes-data-tokenized.json", "./data/jokes-data-processed.json")
+#
+# tokenize_csv_data_to_json("./data/shortjokes.csv", "./data/shortjokes-json.json")
+# tokenize_data_from_file("./data/shortjokes-json.json", "data/shortjokes-tokenized.json")
+process_data_from_file("./data/shortjokes-tokenized.json", "./data/shortjokes-processed.json")
 # main()
 # dump_data()
 

@@ -38,6 +38,7 @@ public class BasicJokeView extends JFrame implements JokeView {
     this.textPanel = new JTextArea("nothing yet~");
     this.textPanel.setEditable(false);
     this.textPanel.setLineWrap(true);
+    this.textPanel.setWrapStyleWord(true);
     // this.textPanel.setPreferredSize(new Dimension(width * 2 / 3, height / 2));
     this.add(this.textPanel);
 

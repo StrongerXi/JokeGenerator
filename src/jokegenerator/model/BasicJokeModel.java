@@ -83,7 +83,7 @@ public class BasicJokeModel implements JokeModel {
 
 
   public BasicJokeModel () {
-    String jsonFile = "./data/jokes-data-processed.json";
+    String jsonFile = "./data/shortjokes-processed.json";
     JSONTokener tokener;
     try {
       tokener = new JSONTokener(new BufferedReader(new FileReader(jsonFile)));
@@ -152,7 +152,9 @@ public class BasicJokeModel implements JokeModel {
     for (int i = 0; i < limit; i += 1) {
       Node node = unigramNode.get(lastWord);
       if (node == null) {
-        throw new RuntimeException(lastWord);
+        // throw new RuntimeException(lastWord);
+        /* Pray that stack overflow won't happen */
+        return generateJoke();
       }
 
       /* Use bigramNode if possible */
