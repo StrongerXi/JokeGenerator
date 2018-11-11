@@ -1,4 +1,4 @@
-package control;
+package jokegenerator.control;
 
 public interface JokeControl {
 

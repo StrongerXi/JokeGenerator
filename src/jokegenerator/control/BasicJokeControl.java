@@ -1,4 +1,4 @@
-package control;
+package jokegenerator.control;
 
 import jokegenerator.model.JokeModel;
 import jokegenerator.view.JokeView;

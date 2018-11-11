@@ -2,7 +2,7 @@ package jokegenerator.model;
 
 public class JokeModelImpl implements JokeModel {
 
-  JokeModelImpl () {
+  public JokeModelImpl () {
   }
 
   public String generateJoke() {

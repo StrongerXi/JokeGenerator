@@ -1,4 +1,4 @@
-package view;
+package jokegenerator.view;
 
 public interface JokeViewListener {
 

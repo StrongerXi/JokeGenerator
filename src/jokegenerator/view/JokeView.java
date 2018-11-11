@@ -1,4 +1,4 @@
-package view;
+package jokegenerator.view;
 
 
 public interface JokeView {
@@ -13,4 +13,9 @@ public interface JokeView {
    * alert the listener.
    */
   void addListener(JokeViewListener listener);
+
+  /**
+   * Refresh the view.
+   */
+  void refresh();
 }
