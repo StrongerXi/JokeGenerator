@@ -7,7 +7,12 @@ from random import randint
 
 endOfJoke = "<s>"
 beginOfJoke = "</s>"
-COUNT_THRESHOLD = 1
+COUNT_THRESHOLD = 2
+
+from math import log
+# used to adjust how score contribute to the count increment
+def score_to_count_delta(score):
+    return log(score + 1, 5)
 
 class Node:
 
@@ -103,11 +108,12 @@ def tokenize_data_from_file(file_in, file_out):
 
     with open(file_in, 'r') as data:
         import re
-        p = re.compile(r"^(([a-zA-Z]+('[a-zA-Z])?)|[0-9]+)[,.?!]?$")
+        p = re.compile(r"^(([a-zA-Z]+('[a-zA-Z]{1,2})?)|[0-9]+)[,.?!]?$")
         for joke in json.load(data):
+            # list(filter(p.match, joke["body"].lower().split()))
             lower_split = joke["body"].lower().split()
-            # if no token is disqualified by regex
-            if len(list(filter(p.match, lower_split))) == len(lower_split):
+            # if no token is disqualified by regex, or the token list is empty
+            if len(list(filter(p.match, lower_split))) == len(lower_split) and len(lower_split) > 0:
                 loj.append(lower_split)
                 los.append(joke["score"])
 
@@ -174,7 +180,6 @@ def process_data_from_file(file_in, file_out):
     # map (word, word) to [Map Word Nat]
     # This is used by a bi-gram model
     pairToCounter = {}
-    from math import log
 
     for index in range(len(loj)):
         last_word = beginOfJoke
@@ -184,7 +189,7 @@ def process_data_from_file(file_in, file_out):
         padded_joke.extend(loj[index])
         padded_joke.append(endOfJoke)
         # increment count based on log of score
-        delta = log(los[index] + 1, 2)
+        delta = score_to_count_delta(los[index])
 
         for i in range(2, len(padded_joke)):
             word = padded_joke[i]
@@ -205,7 +210,7 @@ def process_data_from_file(file_in, file_out):
             # must convert the counter value to an int. since
             # it's sum of some log values
             count = int(counter[nextWord])
-            if count > COUNT_THRESHOLD:
+            if count >= COUNT_THRESHOLD:
                 candidates.append( (nextWord, count) )
 
         if candidates:
@@ -225,7 +230,7 @@ def process_data_from_file(file_in, file_out):
             # must convert the counter value to an int. since
             # it's sum of some log values
             count = int(counter[nextWord])
-            if count > COUNT_THRESHOLD:
+            if count >= COUNT_THRESHOLD:
                 candidates.append( (nextWord, count) )
 
         if candidates:

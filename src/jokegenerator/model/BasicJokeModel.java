@@ -28,6 +28,17 @@ public class BasicJokeModel implements JokeModel {
     int counts[];
     int totalCount;
 
+    // double probs[]; 
+    public Node interpolate(Node trigram, Node bigram) {
+      /* TODO */
+      return null;
+    }
+
+    private Node() {
+      /* Used to set up a Node in a more free way, only but
+       * methods/classes within the Node class */
+    }
+
     public Node(String from, List<String> words, List<Integer> counts) {
       int wordSize = words.size();
       int countSize = counts.size();
@@ -51,11 +62,12 @@ public class BasicJokeModel implements JokeModel {
       int accumulatedFrequency = 0;
       /* threshold ∈ [1, totalCount] */
       int threshold = (int) (Math.random() * this.totalCount) + 1;
-      System.out.printf("%d %d\n", totalCount, threshold);
+      // System.out.printf("%d %d\n", totalCount, threshold);
 
       for (int i = 0; i < this.words.length; i += 1) {
         accumulatedFrequency += this.counts[i];
         if (accumulatedFrequency >= threshold) {
+          // System.out.println(this.counts[i]);
           return this.words[i];
         }
       }
@@ -146,6 +158,10 @@ public class BasicJokeModel implements JokeModel {
       /* Use bigramNode if possible */
       String pairKey = lastLastWord + " " + lastWord;
       if (bigramNode.containsKey(pairKey)) {
+        // debugging
+        String bigramChoice = node.randomSelect();
+        // System.out.printf("%s %s, bigram selected %s\n", lastLastWord, lastWord, bigramChoice);
+
         node = bigramNode.get(pairKey);
       }
 
