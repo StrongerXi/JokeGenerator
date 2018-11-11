@@ -1,4 +1,8 @@
 .idea
 JokeGenerator.iml
 data
+build.xml
+pom.xml
+.syntastic_javac_config
+.classpath
 
